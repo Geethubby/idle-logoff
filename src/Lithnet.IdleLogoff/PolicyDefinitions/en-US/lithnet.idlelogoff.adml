@@ -16,13 +16,16 @@
 			<string id="pol_enable_idle_logoff">Log off inactive users</string>
 			<string id="pol_enable_idle_logoff_help">Enables the agent to log off inactive users</string>
 			<string id="pol_show_warning_message">Show a warning message before logging off</string>
-			<string id="pol_show_warning_message_help">Shows a pop up notification informing the user of the time remaining before they are logged off.
+			<string id="pol_show_warning_message_help">
+				Shows a pop up notification informing the user of the time remaining before they are logged off.
 
-You can optionally provide a custom message to show the user. Use {0} as a placeholder for the remaining time until logoff.
+				You can optionally provide a custom message to show the user. Use {0} as a placeholder for the remaining time until logoff.
 			</string>
 			<string id="string_logoff">Log off</string>
 			<string id="string_reboot">Reboot</string>
 			<string id="string_shutdown">Shutdown</string>
+			<string id="string_turnoffmonitor">Turn off monitor(s)</string>
+			<string id="string_screensaver">Start screensaver</string>
 			<string id="TS_SUPPORTED_WindowsXP">At least Microsoft Windows XP</string>
 		</stringTable>
 		<presentationTable>

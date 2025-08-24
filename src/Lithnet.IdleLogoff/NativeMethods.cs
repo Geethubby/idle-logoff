@@ -15,6 +15,13 @@ namespace Lithnet.idlelogoff
         internal const int TokenAdjustPrivileges = 0x00000020;
         internal const string SeShutdownName = "SeShutdownPrivilege";
 
+        // Monitor and screensaver constants
+        internal const int WM_SYSCOMMAND = 0x112;
+        internal const int SC_MONITORPOWER = 0xF170;
+        internal const int MONITOR_OFF = 2;
+        internal const int MONITOR_ON = -1;
+        internal const int SC_SCREENSAVE = 0xF140;
+
         [DllImport("powrprof.dll")]
         private static extern int CallNtPowerInformation(
             PowerInformationLevel informationLevel,
@@ -23,7 +30,6 @@ namespace Lithnet.idlelogoff
             out ExecutionState state,
             int nOutputBufferSize
         );
-
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetCurrentProcess();
@@ -45,6 +51,20 @@ namespace Lithnet.idlelogoff
 
         [DllImport("kernel32", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr handle);
+
+        // New imports for monitor and screensaver control
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+
+        // Constants for SystemParametersInfo
+        private const uint SPI_GETSCREENSAVERRUNNING = 0x0072;
+        private const uint SPI_SETSCREENSAVERRUNNING = 0x0061;
 
         public static bool IsDisplayRequested()
         {
@@ -73,6 +93,24 @@ namespace Lithnet.idlelogoff
             return info.dwTime;
         }
 
+        public static void TurnOffMonitor()
+        {
+            IntPtr hwnd = NativeMethods.FindWindow("Progman", null);
+            if (hwnd != IntPtr.Zero)
+            {
+                NativeMethods.SendMessage(hwnd, WM_SYSCOMMAND, (IntPtr)SC_MONITORPOWER, (IntPtr)MONITOR_OFF);
+            }
+        }
+
+        public static void StartScreensaver()
+        {
+            IntPtr hwnd = NativeMethods.FindWindow("Progman", null);
+            if (hwnd != IntPtr.Zero)
+            {
+                NativeMethods.SendMessage(hwnd, WM_SYSCOMMAND, (IntPtr)SC_SCREENSAVE, IntPtr.Zero);
+            }
+        }
+
         public static void LogOffUser()
         {
             Mutex mutex = null;
@@ -91,6 +129,19 @@ namespace Lithnet.idlelogoff
                 ShutdownFlags flags;
                 bool elevated = false;
                 bool isLastSession = false;
+
+                // Handle new monitor and screensaver actions
+                if (Settings.Action == IdleTimeoutAction.TurnOffMonitor)
+                {
+                    NativeMethods.TurnOffMonitor();
+                    return; // Don't exit the application for monitor off
+                }
+
+                if (Settings.Action == IdleTimeoutAction.Screensaver)
+                {
+                    NativeMethods.StartScreensaver();
+                    return; // Don't exit the application for screensaver
+                }
 
                 if (Settings.Action == IdleTimeoutAction.Reboot || Settings.Action == IdleTimeoutAction.Shutdown)
                 {

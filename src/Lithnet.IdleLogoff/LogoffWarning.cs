@@ -57,6 +57,25 @@ namespace lithnet.idlelogoff
             this.UpdateLabelText();
         }
 
+        private string GetActionDescription()
+        {
+            switch (Settings.Action)
+            {
+                case IdleTimeoutAction.Logoff:
+                    return "logged off";
+                case IdleTimeoutAction.Reboot:
+                    return "rebooted";
+                case IdleTimeoutAction.Shutdown:
+                    return "shut down";
+                case IdleTimeoutAction.TurnOffMonitor:
+                    return "have your monitor(s) turned off";
+                case IdleTimeoutAction.Screensaver:
+                    return "have the screensaver activated";
+                default:
+                    return "logged off";
+            }
+        }
+
         private void UpdateLabelText()
         {
             TimeSpan remaining = this.LogoffDateTime.Subtract(DateTime.Now);
@@ -64,6 +83,12 @@ namespace lithnet.idlelogoff
             if (remaining.Ticks > 0)
             {
                 string message = Settings.WarningMessage;
+
+                // If using default message, customize it based on action
+                if (message == "Your session has been idle for too long, and you will be logged out in {0}")
+                {
+                    message = $"Your session has been idle for too long, and you will {GetActionDescription()} in {{0}}";
+                }
 
                 if (message.Contains("{0}"))
                 {

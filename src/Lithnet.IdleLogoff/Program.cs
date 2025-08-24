@@ -91,8 +91,8 @@ namespace Lithnet.idlelogoff
                 else
                 {
                     Trace.WriteLine($"An invalid command line argument was specified: {arg}");
-                   // MessageBox.Show($"An invalid command line argument was specified: {arg}");
-                   // Environment.Exit(1);
+                    // MessageBox.Show($"An invalid command line argument was specified: {arg}");
+                    // Environment.Exit(1);
                 }
             }
         }
@@ -186,16 +186,43 @@ namespace Lithnet.idlelogoff
 
             try
             {
-                Program.Stop();
-                NativeMethods.LogOffUser();
+                // Check if this is a non-terminating action (monitor off or screensaver)
+                bool isNonTerminatingAction = Settings.Action == IdleTimeoutAction.TurnOffMonitor ||
+                                            Settings.Action == IdleTimeoutAction.Screensaver;
+
+                if (isNonTerminatingAction)
+                {
+                    // Stop timer temporarily and hide warning
+                    Program.eventTimer.Stop();
+                    Program.HideWarning();
+
+                    // Perform the action
+                    NativeMethods.LogOffUser();
+
+                    // Reset idle status and restart timer
+                    Program.ResetIdleStatus(NativeMethods.GetLastInputTime());
+                }
+                else
+                {
+                    // For terminating actions (logoff, shutdown, reboot)
+                    Program.Stop();
+                    NativeMethods.LogOffUser();
+                    Application.Exit();
+                }
             }
             catch (Exception ex)
             {
                 EventLogging.TryLogEvent($"An error occurred trying to perform the {Settings.Action} operation\n" + ex.Message, EventLogging.EvtLogofffailed);
-            }
-            finally
-            {
-                Application.Exit();
+
+                // If it's a non-terminating action and failed, reset and continue
+                if (Settings.Action == IdleTimeoutAction.TurnOffMonitor || Settings.Action == IdleTimeoutAction.Screensaver)
+                {
+                    Program.ResetIdleStatus(NativeMethods.GetLastInputTime());
+                }
+                else
+                {
+                    Application.Exit();
+                }
             }
         }
 
@@ -211,6 +238,12 @@ namespace Lithnet.idlelogoff
             Program.eventTimer.Interval = (int)TimeSpan.FromSeconds(Program.idleCheckSeconds).TotalMilliseconds;
             Program.lastTicks = currentTicks;
             Program.HideWarning();
+
+            // Restart the timer if it was stopped
+            if (!Program.eventTimer.Enabled)
+            {
+                Program.eventTimer.Start();
+            }
         }
 
         private static void ShowWarning()

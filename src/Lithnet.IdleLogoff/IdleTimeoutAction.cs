@@ -11,5 +11,7 @@ namespace Lithnet.idlelogoff
         Logoff = 0,
         Reboot = 1,
         Shutdown = 2,
+        TurnOffMonitor = 3,
+        Screensaver = 4,
     }
 }
